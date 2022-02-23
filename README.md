@@ -2,7 +2,7 @@
 
 A game written in Nim for the [WASM-4](https://wasm4.org) fantasy console.
 
-Try it now on your browser! https://msakuta.github.io/InnerWild/out.html
+Try it now on your browser! https://msakuta.github.io/InnerWilds/out.html
 
 ## Building
 

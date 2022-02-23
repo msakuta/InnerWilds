@@ -88,13 +88,9 @@ proc update {.exportWasm.} =
 
   if bool(gamepad and BUTTON_RIGHT):
     player_rot = player_rot * angleAxis(ROTATE_SPEED, Vec(x: 0.0, y: 1.0, z: 0.0))
-    trace("Right button is down! {player_rot}")
   if bool(gamepad and BUTTON_LEFT):
     player_rot = player_rot * angleAxis(-ROTATE_SPEED, Vec(x: 0.0, y: 1.0, z: 0.0))
-    trace("Left button is down! {player_rot}")
   if bool(gamepad and BUTTON_UP):
     player_rot = player_rot * angleAxis(ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
-    trace("Right button is down! {player_rot}")
   if bool(gamepad and BUTTON_DOWN):
     player_rot = player_rot * angleAxis(-ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
-    trace("Left button is down! {player_rot}")
