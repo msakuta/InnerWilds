@@ -1,0 +1,26 @@
+name: w4
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    - uses: jiro4989/setup-nim-action@v1
+
+    - run: npm install -g wasm4
+    - run: nimble rel
+    - run: w4 bundle --html dist/out.html build\cart.wasm
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
