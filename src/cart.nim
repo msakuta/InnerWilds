@@ -1,6 +1,5 @@
 import cart/wasm4
 import std/math
-import std/sequtils
 import linalg
 
 # Call NimMain so that global Nim code in modules will be called, 
@@ -18,6 +17,7 @@ type
 var
   sun_phase = 0.0
   moon_phase = 0.0
+  player_rot = unitQuat()
 
 var
   earth = Obj(pos: Vec(x: 0.0, y: 0.0, z: 20.0), radius: 3.0)
@@ -55,11 +55,11 @@ proc update {.exportWasm.} =
   for y in 0..<SCREEN_SIZE:
     for x in 0..<SCREEN_SIZE:
       var
-        ray = Vec(
+        ray = player_rot.trans(Vec(
           x: float32(x) - SCREEN_SIZE / 2.0,
           y: float32(y) - SCREEN_SIZE / 2.0,
           z: float32(SCREEN_SIZE)
-        )
+        ))
 
       let
         inside_earth = ray_hits(earth, ray)
@@ -81,3 +81,20 @@ proc update {.exportWasm.} =
   sun.pos.y = float32(sun_phase.sin() * 1.5)
   sun.pos.z = float32(sun_phase.sin() * 10.0 + 20.0)
   sun_phase = (sun_phase + 0.01) mod (2.0 * PI)
+
+  var gamepad = GAMEPAD1[]
+
+  const ROTATE_SPEED: float32 = 0.01
+
+  if bool(gamepad and BUTTON_RIGHT):
+    player_rot = player_rot * angleAxis(ROTATE_SPEED, Vec(x: 0.0, y: 1.0, z: 0.0))
+    trace("Right button is down! {player_rot}")
+  if bool(gamepad and BUTTON_LEFT):
+    player_rot = player_rot * angleAxis(-ROTATE_SPEED, Vec(x: 0.0, y: 1.0, z: 0.0))
+    trace("Left button is down! {player_rot}")
+  if bool(gamepad and BUTTON_UP):
+    player_rot = player_rot * angleAxis(ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
+    trace("Right button is down! {player_rot}")
+  if bool(gamepad and BUTTON_DOWN):
+    player_rot = player_rot * angleAxis(-ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
+    trace("Left button is down! {player_rot}")
