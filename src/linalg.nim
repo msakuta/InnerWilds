@@ -13,6 +13,9 @@ type
 proc `+`*(a, b: Vec): Vec =
   return Vec(x: a.x + b.x, y: a.y + b.y, z: a.z + b.z)
 
+proc `+=`*(a: var Vec, b: Vec) =
+  a.x += b.x; a.y += b.y; a.z += b.z
+
 proc `-`*(a, b: Vec): Vec =
   return Vec(x: a.x - b.x, y: a.y - b.y, z: a.z - b.z)
 
@@ -32,11 +35,12 @@ proc normalized*(a: Vec): Vec =
   let len = a.len()
   return Vec(x: a.x / len, y: a.y / len, z: a.z / len)
 
-proc ray_hits*(obj: Obj, ray: Vec): float32 =
+proc ray_hits*(obj: Obj, ray: Vec, ray_orig: Vec): float32 =
   let ray_slen = ray.slen()
   let
-    b = ray.dot(obj.pos)
-    c = ray_slen * (obj.pos.slen() - obj.radius * obj.radius)
+    opos = obj.pos - ray_orig
+    b = ray.dot(opos)
+    c = ray_slen * (opos.slen() - obj.radius * obj.radius)
     # delta = obj.pos - ray.scaled(b)
     discrim = b * b - c
   if discrim < 0:

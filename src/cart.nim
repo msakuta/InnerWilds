@@ -17,6 +17,8 @@ type
 var
   sun_phase = 0.0
   moon_phase = 0.0
+  player_pos = Vec(x: 0.0, y: 0.0, z: 0.0)
+  player_velo = Vec(x: 0.0, y: 0.0, z: 0.0)
   player_rot = unitQuat()
 
 var
@@ -30,7 +32,7 @@ proc putPixel(x: uint, y: uint, pixel: uint8) =
 
 proc shade_planet(x: uint, y: uint, ray: Vec, t: float32, obj: Obj) =
   let
-    hit_point = ray.scaled(t)
+    hit_point = ray.scaled(t) + player_pos
     delta_sun = hit_point - sun.pos
     planet_normal = hit_point - obj.pos
     sp = delta_sun.dot(planet_normal)
@@ -62,9 +64,9 @@ proc update {.exportWasm.} =
         ))
 
       let
-        inside_earth = ray_hits(earth, ray)
-        inside_moon = ray_hits(moon, ray)
-        inside_sun = ray_hits(sun, ray)
+        inside_earth = ray_hits(earth, ray, player_pos)
+        inside_moon = ray_hits(moon, ray, player_pos)
+        inside_sun = ray_hits(sun, ray, player_pos)
         min = [inside_earth, inside_moon, inside_sun, Inf].argmin()
       case min:
         of 0: shade_planet(uint(x), uint(y), ray, inside_earth, earth)
@@ -94,3 +96,9 @@ proc update {.exportWasm.} =
     player_rot = player_rot * angleAxis(ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
   if bool(gamepad and BUTTON_DOWN):
     player_rot = player_rot * angleAxis(-ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
+  if bool(gamepad and BUTTON_1):
+    player_velo += player_rot.trans(Vec(x: 0.0, y: 0.0, z: 0.01))
+  if bool(gamepad and BUTTON_2):
+    player_velo += player_rot.trans(Vec(x: 0.0, y: 0.0, z: -0.01))
+
+  player_pos += player_velo
