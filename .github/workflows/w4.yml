@@ -24,7 +24,7 @@ jobs:
         tar xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
         export WASI_SDK_PATH=`pwd`/wasi-sdk-${WASI_VERSION_FULL}
         nimble rel
-    - run: w4 bundle --html dist/out.html build\cart.wasm
+    - run: w4 bundle --html dist/out.html build/cart.wasm
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
