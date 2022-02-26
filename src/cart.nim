@@ -9,22 +9,21 @@ proc NimMain {.importc.}
 proc start {.exportWasm.} = 
   NimMain()
 
-type
-  Position = object
-    x: int
-    y: int
+const
+  GMSun: float32 = 1.0e-3
+  GMEarth: float32 = 1.0e-4
 
 var
-  sun_phase = 0.0
+  earth_phase = -PI / 2.0
   moon_phase = 0.0
-  player_pos = Vec(x: 0.0, y: 0.0, z: 0.0)
-  player_velo = Vec(x: 0.0, y: 0.0, z: 0.0)
+  player_pos = Vec(x: 0.0, y: 0.0, z: -28.0)
+  player_velo = Vec(x: (GMSun / 28).sqrt(), y: 0.0, z: 0.0)
   player_rot = unitQuat()
 
 var
-  earth = Obj(pos: Vec(x: 0.0, y: 0.0, z: 20.0), radius: 3.0)
-  moon = Obj(pos: Vec(x: 0.0, y: 0.0, z: 20.0), radius: 1.5)
-  sun = Obj(pos: Vec(x: 0.0, y: 0.0, z: 20.0), radius: 2.0)
+  earth = Obj(pos: Vec(x: 0.0, y: 0.0, z: 0.0), radius: 1.0)
+  moon = Obj(pos: Vec(x: 0.0, y: 0.0, z: 0.0), radius: 0.5)
+  sun = Obj(pos: Vec(x: 0.0, y: 0.0, z: 0.0), radius: 3.0)
 
 proc putPixel(x: uint, y: uint, pixel: uint8) =
   var buf = FRAMEBUFFER[x.div(4) + y * SCREEN_SIZE.div(4)].addr
@@ -50,6 +49,21 @@ proc argmin(arr: openArray[float32]): int =
 
   return mini
 
+proc format(f: float32): string =
+  var
+    ret = ""
+    top = f.abs
+    digit = 0
+  for i in 0..<3:
+    digit += 1
+    if top < 1.0:
+      break
+    top = top / 10.0
+  for i in 0..<digit:
+    ret.add($char(int(top.floor) + ord('0')))
+    top = (top / 2.0) mod 1
+  return ret
+
 proc update {.exportWasm.} =
   let NEW_PALETTE: array[4, uint32] = [0x000033'u32, 0x3f3f5f, 0x5f5f8f, 0xffffff]
   PALETTE[] = NEW_PALETTE
@@ -74,19 +88,25 @@ proc update {.exportWasm.} =
         of 2: put_pixel(uint(x), uint(y), 3)
         else: discard
 
-  moon.pos.x = float32(moon_phase.cos() * 7.0)
-  moon.pos.y = float32(moon_phase.sin() * -0.75)
-  moon.pos.z = float32(moon_phase.sin() * 7.0 + 20.0)
-  moon_phase = (moon_phase + 0.02) mod (2.0 * PI)
+  const
+    EARTH_ROTATION_RADIUS = 25.0
+    MOON_ROTATION_RADIUS = 5.0
 
-  sun.pos.x = float32(sun_phase.cos() * 10.0)
-  sun.pos.y = float32(sun_phase.sin() * 1.5)
-  sun.pos.z = float32(sun_phase.sin() * 10.0 + 20.0)
-  sun_phase = (sun_phase + 0.01) mod (2.0 * PI)
+  earth.pos.x = float32(earth_phase.cos() * EARTH_ROTATION_RADIUS)
+  earth.pos.y = float32(earth_phase.sin() * EARTH_ROTATION_RADIUS * 0.05)
+  earth.pos.z = float32(earth_phase.sin() * EARTH_ROTATION_RADIUS)
+  earth_phase = (earth_phase + GMSun / EARTH_ROTATION_RADIUS * 0.002) mod (2.0 * PI)
+
+  moon.pos.x = earth.pos.x + float32(moon_phase.cos() * MOON_ROTATION_RADIUS)
+  moon.pos.y = earth.pos.y + float32(moon_phase.sin() * MOON_ROTATION_RADIUS * -0.05)
+  moon.pos.z = earth.pos.z + float32(moon_phase.sin() * MOON_ROTATION_RADIUS)
+  moon_phase = (moon_phase + 0.005) mod (2.0 * PI)
 
   var gamepad = GAMEPAD1[]
 
-  const ROTATE_SPEED: float32 = 0.01
+  const
+    ROTATE_SPEED: float32 = 0.01
+    ACCELERATION: float32 = 0.001
 
   if bool(gamepad and BUTTON_RIGHT):
     player_rot = player_rot * angleAxis(ROTATE_SPEED, Vec(x: 0.0, y: 1.0, z: 0.0))
@@ -97,8 +117,16 @@ proc update {.exportWasm.} =
   if bool(gamepad and BUTTON_DOWN):
     player_rot = player_rot * angleAxis(-ROTATE_SPEED, Vec(x: 1.0, y: 0.0, z: 0.0))
   if bool(gamepad and BUTTON_1):
-    player_velo += player_rot.trans(Vec(x: 0.0, y: 0.0, z: 0.01))
+    player_velo += player_rot.trans(Vec(x: 0.0, y: 0.0, z: ACCELERATION))
   if bool(gamepad and BUTTON_2):
-    player_velo += player_rot.trans(Vec(x: 0.0, y: 0.0, z: -0.01))
+    player_velo += player_rot.trans(Vec(x: 0.0, y: 0.0, z: -ACCELERATION))
+
+  let
+    sun_delta = sun.pos - player_pos
+    earth_delta = earth.pos - player_pos
+  player_velo += sun_delta * GMSun / sun_delta.slen()
+  # player_velo += earth_delta * GMEarth / earth_delta.slen()
+
+  trace(format(player_pos.x))
 
   player_pos += player_velo

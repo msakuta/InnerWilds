@@ -19,6 +19,12 @@ proc `+=`*(a: var Vec, b: Vec) =
 proc `-`*(a, b: Vec): Vec =
   return Vec(x: a.x - b.x, y: a.y - b.y, z: a.z - b.z)
 
+proc `*`*(a: Vec, b: float32): Vec =
+  return Vec(x: a.x * b, y: a.y * b, z: a.z * b)
+
+proc `/`*(a: Vec, b: float32): Vec =
+  return Vec(x: a.x / b, y: a.y / b, z: a.z / b)
+
 proc dot*(a, b: Vec): float32 =
   return a.x * b.x + a.y * b.y + a.z * b.z
 
